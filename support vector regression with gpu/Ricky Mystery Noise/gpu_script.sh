@@ -1,13 +1,14 @@
 #!/bin/bash
-#SBATCH --time=05:00:00
+#SBATCH --time=01:00:00
 	# walltime format is h:mm:ss.
 #SBATCH --nodes=1 --ntasks-per-node=1
 #SBATCH --gpus-per-node=1
 #SBATCH --job-name=svr_test
 #SBATCH --account=PAS1066
 
-source /fs/project/PAS1066/zhang_anaconda/anaconda3/bin/activate
-conda activate rapids-22.06
+#source /fs/project/PAS1066/zhang_anaconda/anaconda3/bin/activate
+source /users/PAS2038/zhang10086/miniconda3/bin/activate
+conda activate rapids-22.08
 module load cuda/11.2.2
 
 set -x
