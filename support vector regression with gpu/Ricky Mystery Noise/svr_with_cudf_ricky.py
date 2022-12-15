@@ -21,7 +21,7 @@ from cuml.preprocessing import StandardScaler
 import numpy as np
 import pandas as pd
 import time
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
 import matplotlib.pyplot as plt
 
 
@@ -48,20 +48,24 @@ df.head()
 
 df2 = df.copy()
 
+#Shuffle df2
+
+df3 = df2.sample(frac=1)
+
 
 # # Creating the data splits
 
 # In[35]:
 
 
-X = df2.iloc[0:len(df2), [1, 2, 4, 5, 6, 8]]
-y = df2.iloc[0:len(df2), 3]
+X = df3.iloc[0:len(df2), [1, 2, 4, 5, 6, 8]]
+y = df3.iloc[0:len(df2), 3]
 
 
 # In[36]:
 
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.67)
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.9)
 
 
 # # Standardizing X_train
@@ -193,6 +197,8 @@ print(f'MSE: {mean_squared_error(y_test, y_predict_test)}')
 
 print(f'r^2 score :{r2_score(y_test, y_predict_test)}')
 
+print("Average percent error:", mean_absolute_percentage_error(y_test, y_predict_test))
+
 
 # In[55]:
 
@@ -208,9 +214,11 @@ print(f'Wall Clock\n\nHours  | {total_time // 60**2}\nMinutes| {total_time // 60
 
 xSize = np.linspace(start = .25, stop= .95, num= 50)
 yTime = np.zeros(len(xSize))
-for i in range(len(xSize)):
-    print(f'job: {i+1}')
-    X_trainTest, X_testTest, y_trainTest, y_testTest = train_test_split(X, y, train_size = xSize[i])
+MSEList = np.zeros(len(xSize))
+percentError = np.zeros(len(xSize))
+for size in range(len(xSize)):
+    print(f'job: {size+1}')
+    X_trainTest, X_testTest, y_trainTest, y_testTest = train_test_split(X, y, train_size = xSize[size])
     # 
     stand_scalerTest = StandardScaler()
     #
@@ -241,10 +249,22 @@ for i in range(len(xSize)):
     end_timeTest = time.time()
     #
     total_timeTest = end_timeTest - start_timeTest
+    
+    #Transfering cupy arrays and cudf to numpy arrays
+    myar = np.zeros(len(y_predict_testTest))
+    for index in range(len(myar)):
+        myar[index] = y_predict_testTest[index]
+    y_predict_testTest = myar
+    myar2 = np.zeros(len(y_testTest))
+    y_testTest = y_testTest.to_numpy()
+    
     #
-    yTime[i] = total_timeTest
+    yTime[size] = total_timeTest
+    MSEList[size] = mean_squared_error(y_testTest, y_predict_testTest)
+    percentError[size] = mean_absolute_percentage_error(y_testTest, y_predict_testTest)
     #
-    print(f'{xSize[i], yTime[i]}')
+    #print(f'{xSize[i], yTime[i]}')
+    print(len(X_trainTest), "training points,", yTime[size], "seconds,", "MSE:", MSEList[size], "Avg percent error:", percentError[size])
     print()
 
 
@@ -258,13 +278,13 @@ plt.scatter(xSize, yTime)
 # In[ ]:
 
 
-dfTime = pd.DataFrame({'xSize':xSize, 'yTime':yTime})
+dfMetrics = pd.DataFrame({'xSize':xSize, 'yTime':yTime, 'MSE':MSEList, 'Percent Error':percentError})
 
 
 # In[ ]:
 
 
-dfTime.to_csv('time_needed2.csv')
+dfMetrics.to_csv('metricsPedro.csv')
 
 
 # In[ ]:
